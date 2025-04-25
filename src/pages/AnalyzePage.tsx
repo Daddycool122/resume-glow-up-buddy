@@ -67,7 +67,7 @@ const AnalyzePage = () => {
       const { error: dbError } = await supabase
         .from('resume_analyses')
         .insert({
-          user_id: user.id, // Ensure user_id is included
+          user_id: user.id,
           filename: selectedFile.name,
           content: resumeText,
           analysis: analysis,

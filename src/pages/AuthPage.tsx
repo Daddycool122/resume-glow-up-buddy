@@ -1,55 +1,119 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { AlertCircle, FileSearch } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   
-  const handleSignIn = (e: React.FormEvent) => {
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        navigate('/analyze');
+      }
+    };
+    
+    checkUser();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        navigate('/analyze');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+  
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
-    // Simulate authentication process
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Authentication Required",
-        description: "Please connect Supabase to enable authentication.",
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
-      setError("Authentication is not available until Supabase is connected.");
-    }, 1000);
+      
+      if (signInError) throw signInError;
+      
+      if (data.user) {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+        navigate('/analyze');
+      }
+    } catch (err: any) {
+      console.error("Sign in error:", err);
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+      toast({
+        title: "Sign In Failed",
+        description: err.message || "Failed to sign in. Please check your credentials.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
-    // Simulate registration process
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Authentication Required",
-        description: "Please connect Supabase to enable registration.",
+    try {
+      // Create new user
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name
+          }
+        }
       });
-      setError("Registration is not available until Supabase is connected.");
-    }, 1000);
+      
+      if (signUpError) throw signUpError;
+      
+      // Registration successful
+      toast({
+        title: "Account created!",
+        description: "Please check your email to confirm your registration.",
+      });
+      
+    } catch (err: any) {
+      console.error("Sign up error:", err);
+      setError(err.message || "Failed to create account. Please try again.");
+      toast({
+        title: "Registration Failed",
+        description: err.message || "Failed to create account. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -172,8 +236,8 @@ const AuthPage = () => {
         <CardFooter className="flex flex-col items-center">
           <div className="text-center text-sm text-gray-500 mt-4">
             <p>
-              Note: Authentication will be enabled after connecting Supabase. 
-              This is a demonstration UI only.
+              Note: For testing purposes, you may want to disable email verification 
+              in the Supabase dashboard.
             </p>
           </div>
         </CardFooter>

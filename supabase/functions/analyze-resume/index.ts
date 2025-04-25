@@ -20,7 +20,8 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Updated to use a valid model name: gemini-1.5-pro-latest instead of gemini-pro
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
     const { content } = await req.json();
     if (!content) {

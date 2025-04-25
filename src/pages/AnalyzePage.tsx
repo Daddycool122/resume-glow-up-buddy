@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -66,7 +67,7 @@ const AnalyzePage = () => {
       const { error: dbError } = await supabase
         .from('resume_analyses')
         .insert({
-          user_id: user.id,
+          user_id: user.id, // Ensure user_id is included
           filename: selectedFile.name,
           content: resumeText,
           analysis: analysis,

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useNavigate } from 'react-router-dom';
 
 const AnalyzePage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -17,6 +17,7 @@ const AnalyzePage = () => {
   const [analysisResult, setAnalysisResult] = useState<ResumeAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -38,6 +39,19 @@ const AnalyzePage = () => {
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to analyze resumes.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
       // Extract text from PDF
       const resumeText = await extractTextFromPDF(selectedFile);
       
@@ -52,6 +66,7 @@ const AnalyzePage = () => {
       const { error: dbError } = await supabase
         .from('resume_analyses')
         .insert({
+          user_id: user.id,
           filename: selectedFile.name,
           content: resumeText,
           analysis: analysis,

@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from 'react-router-dom';
+import { generateMockAnalysis } from '@/services/mockService';
 
 const AnalyzePage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -57,11 +58,18 @@ const AnalyzePage = () => {
       const resumeText = await extractTextFromPDF(selectedFile);
       
       // Call the Edge Function to analyze the resume
-      const { data: { analysis }, error: functionError } = await supabase.functions.invoke('analyze-resume', {
+      const { data, error: functionError } = await supabase.functions.invoke('analyze-resume', {
         body: { content: resumeText }
       });
 
       if (functionError) throw functionError;
+      
+      if (!data || !data.analysis) {
+        console.error("Invalid response format:", data);
+        throw new Error("Failed to get valid analysis from the server. Using mock data instead.");
+      }
+
+      const analysis = data.analysis;
 
       // Store the analysis result in the database
       const { error: dbError } = await supabase
@@ -83,11 +91,16 @@ const AnalyzePage = () => {
       });
     } catch (err: any) {
       console.error("Analysis error:", err);
-      setError(err.message || "An error occurred while analyzing your resume.");
+      
+      // Use mock data if there's an error with the API
+      const mockAnalysis = generateMockAnalysis();
+      setAnalysisResult(mockAnalysis);
+      
+      setError(err.message || "An error occurred while analyzing your resume. Using mock data instead.");
       
       toast({
         title: "Analysis Failed",
-        description: err.message || "An error occurred while analyzing your resume.",
+        description: "Using mock data for demonstration purposes.",
         variant: "destructive",
       });
     } finally {

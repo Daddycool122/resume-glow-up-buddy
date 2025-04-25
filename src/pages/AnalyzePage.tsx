@@ -3,11 +3,9 @@ import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ResumeUploader from '@/components/resume/ResumeUploader';
-import ApiKeyInput from '@/components/resume/ApiKeyInput';
 import AnalysisResult, { ResumeAnalysisResult } from '@/components/resume/AnalysisResult';
 import { extractTextFromPDF } from '@/services/pdfService';
-import GeminiService from '@/services/geminiService';
-import { generateMockAnalysis } from '@/services/mockService';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { AlertCircle } from 'lucide-react';
@@ -16,7 +14,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const AnalyzePage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [apiKey, setApiKey] = useState<string>(localStorage.getItem('gemini_api_key') || '');
   const [analysisResult, setAnalysisResult] = useState<ResumeAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -24,11 +21,6 @@ const AnalyzePage = () => {
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setAnalysisResult(null);
-    setError(null);
-  };
-
-  const handleApiKeySubmit = (key: string) => {
-    setApiKey(key);
     setError(null);
   };
 
@@ -42,15 +34,6 @@ const AnalyzePage = () => {
       return;
     }
 
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsProcessing(true);
     setError(null);
 
@@ -58,20 +41,25 @@ const AnalyzePage = () => {
       // Extract text from PDF
       const resumeText = await extractTextFromPDF(selectedFile);
       
-      // Use mock data for demo purposes
-      // In a real app, uncomment the code below to use actual Gemini API
-      let result: ResumeAnalysisResult;
+      // Call the Edge Function to analyze the resume
+      const { data: { analysis }, error: functionError } = await supabase.functions.invoke('analyze-resume', {
+        body: { content: resumeText }
+      });
+
+      if (functionError) throw functionError;
+
+      // Store the analysis result in the database
+      const { error: dbError } = await supabase
+        .from('resume_analyses')
+        .insert({
+          filename: selectedFile.name,
+          content: resumeText,
+          analysis: analysis,
+        });
+
+      if (dbError) throw dbError;
       
-      if (import.meta.env.DEV) {
-        // Use mock data in development mode
-        result = generateMockAnalysis();
-      } else {
-        // Use real API in production mode
-        const geminiService = new GeminiService({ apiKey });
-        result = await geminiService.analyzeResume(resumeText);
-      }
-      
-      setAnalysisResult(result);
+      setAnalysisResult(analysis);
       
       toast({
         title: "Analysis Complete",
@@ -107,20 +95,16 @@ const AnalyzePage = () => {
               </Alert>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h2 className="text-xl font-semibold mb-4 text-resume-dark">Upload Your Resume</h2>
-                <ResumeUploader onFileSelect={handleFileSelect} isProcessing={isProcessing} />
-              </div>
-              
-              <ApiKeyInput onApiKeySubmit={handleApiKeySubmit} />
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+              <h2 className="text-xl font-semibold mb-4 text-resume-dark">Upload Your Resume</h2>
+              <ResumeUploader onFileSelect={handleFileSelect} isProcessing={isProcessing} />
             </div>
             
             <div className="flex justify-center mb-8">
               <Button 
                 size="lg" 
                 onClick={handleAnalyze}
-                disabled={isProcessing || !selectedFile || !apiKey}
+                disabled={isProcessing || !selectedFile}
                 className="bg-resume-primary hover:bg-resume-accent"
               >
                 {isProcessing ? 'Analyzing...' : 'Analyze Resume'}
@@ -132,19 +116,6 @@ const AnalyzePage = () => {
                 <AnalysisResult result={analysisResult} />
               </div>
             )}
-            
-            <div className="bg-white p-6 rounded-lg border border-gray-200 mt-8">
-              <h2 className="text-xl font-semibold mb-2 text-resume-dark">What happens next?</h2>
-              <p className="text-gray-600 mb-4">
-                After connecting Supabase, you'll be able to:
-              </p>
-              <ul className="list-disc pl-5 text-gray-600 space-y-2">
-                <li>Create an account to save your analyses</li>
-                <li>Compare multiple resume versions</li>
-                <li>Store your API keys securely in the backend</li>
-                <li>Access premium features and templates</li>
-              </ul>
-            </div>
           </div>
         </div>
       </main>

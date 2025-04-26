@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Download, Share2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Download, Save, Share2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ResumeAnalysisScore {
   overall: number;
@@ -37,10 +38,13 @@ export interface ResumeAnalysisResult {
 
 interface AnalysisResultProps {
   result: ResumeAnalysisResult;
+  filename?: string;
+  content?: string;
 }
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, content }) => {
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = React.useState(false);
   
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-100 text-green-700';
@@ -80,6 +84,63 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
             variant: "destructive"
           });
         });
+    }
+  };
+
+  const handleSaveAnalysis = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save resume analyses.",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      if (!filename || !content) {
+        toast({
+          title: "Missing data",
+          description: "Filename or content is missing. Cannot save the analysis.",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+      
+      // Save the analysis result in the database
+      const { error: dbError } = await supabase
+        .from('resume_analyses')
+        .insert({
+          user_id: user.id,
+          filename: filename,
+          content: content,
+          analysis: result,
+        });
+
+      if (dbError) {
+        throw dbError;
+      }
+      
+      toast({
+        title: "Analysis Saved",
+        description: "Your resume analysis has been saved to your account.",
+      });
+    } catch (error: any) {
+      console.error("Error saving analysis:", error);
+      toast({
+        title: "Failed to save",
+        description: error.message || "An error occurred while saving the analysis.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -234,8 +295,13 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
         <p className="text-xs text-gray-500">
           Powered by Gemini AI
         </p>
-        <Button className="bg-resume-primary hover:bg-resume-accent">
-          Save Analysis
+        <Button 
+          className="bg-resume-primary hover:bg-resume-accent"
+          onClick={handleSaveAnalysis}
+          disabled={isSaving}
+        >
+          <Save className="h-4 w-4 mr-1" />
+          {isSaving ? 'Saving...' : 'Save Analysis'}
         </Button>
       </CardFooter>
     </Card>

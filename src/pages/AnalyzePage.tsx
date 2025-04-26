@@ -7,7 +7,7 @@ import AnalysisResult, { ResumeAnalysisResult } from '@/components/resume/Analys
 import { extractTextFromPDF } from '@/services/pdfService';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,7 @@ const AnalyzePage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ResumeAnalysisResult | null>(null);
+  const [resumeText, setResumeText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const AnalyzePage = () => {
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setAnalysisResult(null);
+    setResumeText('');
     setError(null);
   };
 
@@ -55,11 +57,12 @@ const AnalyzePage = () => {
       }
 
       // Extract text from PDF
-      const resumeText = await extractTextFromPDF(selectedFile);
+      const text = await extractTextFromPDF(selectedFile);
+      setResumeText(text);
       
       // Call the Edge Function to analyze the resume
       const { data, error: functionError } = await supabase.functions.invoke('analyze-resume', {
-        body: { content: resumeText }
+        body: { content: text }
       });
 
       if (functionError) throw functionError;
@@ -70,19 +73,6 @@ const AnalyzePage = () => {
       }
 
       const analysis = data.analysis;
-
-      // Store the analysis result in the database
-      const { error: dbError } = await supabase
-        .from('resume_analyses')
-        .insert({
-          user_id: user.id,
-          filename: selectedFile.name,
-          content: resumeText,
-          analysis: analysis,
-        });
-
-      if (dbError) throw dbError;
-      
       setAnalysisResult(analysis);
       
       toast({
@@ -142,7 +132,11 @@ const AnalyzePage = () => {
             
             {analysisResult && (
               <div className="mb-8">
-                <AnalysisResult result={analysisResult} />
+                <AnalysisResult 
+                  result={analysisResult} 
+                  filename={selectedFile?.name}
+                  content={resumeText}
+                />
               </div>
             )}
           </div>

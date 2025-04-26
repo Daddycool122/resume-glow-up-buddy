@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -41,12 +40,15 @@ const SavedAnalysesPage: React.FC = () => {
     if (!analysisToDelete) return;
 
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('resume_analyses')
         .delete()
-        .eq('id', analysisToDelete);
+        .eq('id', analysisToDelete)
+        .select('count');
 
       if (error) throw error;
+
+      console.log(`Deleted ${count} records from Supabase`);
 
       setSavedAnalyses(prevAnalyses => prevAnalyses.filter(analysis => analysis.id !== analysisToDelete));
       setDeleteDialogOpen(false);

@@ -40,16 +40,13 @@ const SavedAnalysesPage: React.FC = () => {
     if (!analysisToDelete) return;
 
     try {
-      const { error, count } = await supabase
+      const { error } = await supabase
         .from('resume_analyses')
         .delete()
-        .eq('id', analysisToDelete)
-        .select('count');
+        .eq('id', analysisToDelete);
 
       if (error) throw error;
-
-      console.log(`Deleted ${count} records from Supabase`);
-
+      
       setSavedAnalyses(prevAnalyses => prevAnalyses.filter(analysis => analysis.id !== analysisToDelete));
       setDeleteDialogOpen(false);
       setAnalysisToDelete(null);

@@ -20,7 +20,6 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Using the correct model name - gemini-1.5-pro-latest is the current model name
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
     const { content } = await req.json();
@@ -56,6 +55,8 @@ serve(async (req) => {
       "improvement_suggestions": "<detailed paragraph with suggestions for improvement>"
     }
 
+    IMPORTANT: Return ONLY the JSON object without any markdown formatting, code blocks, or additional text.
+
     Resume text to analyze:
     ${content}`;
 
@@ -63,14 +64,30 @@ serve(async (req) => {
     const response = await result.response;
     const text = response.text();
     
-    // Parse the response text as JSON
+    console.log('Raw response received:', text.substring(0, 100) + '...');
+    
+    // Extract JSON from response (handle potential markdown code blocks)
+    let jsonText = text;
+    
+    // If response contains markdown code blocks, extract just the JSON
+    if (text.includes('```json')) {
+      const jsonStartIndex = text.indexOf('{');
+      const jsonEndIndex = text.lastIndexOf('}') + 1;
+      
+      if (jsonStartIndex !== -1 && jsonEndIndex > 0) {
+        jsonText = text.substring(jsonStartIndex, jsonEndIndex);
+        console.log('Extracted JSON from markdown code block');
+      }
+    }
+    
+    // Parse the clean JSON text
     let analysis;
     try {
-      analysis = JSON.parse(text);
+      analysis = JSON.parse(jsonText);
       console.log('Analysis completed successfully');
     } catch (jsonError) {
       console.error('Error parsing JSON response:', jsonError);
-      console.log('Raw text response:', text);
+      console.log('Failed JSON text:', jsonText);
       throw new Error('Invalid JSON response from Gemini API');
     }
     

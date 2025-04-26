@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,25 +11,46 @@ import { formatDistance } from 'date-fns';
 import { Eye, Trash2 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import ViewAnalysisDialog from '@/components/resume/ViewAnalysisDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const SavedAnalysesPage: React.FC = () => {
   const [savedAnalyses, setSavedAnalyses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [analysisToDelete, setAnalysisToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleDelete = async (id: string) => {
+  const confirmDelete = (id: string) => {
+    setAnalysisToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!analysisToDelete) return;
+
     try {
       const { error } = await supabase
         .from('resume_analyses')
         .delete()
-        .eq('id', id);
+        .eq('id', analysisToDelete);
 
       if (error) throw error;
 
-      setSavedAnalyses(prevAnalyses => prevAnalyses.filter(analysis => analysis.id !== id));
+      setSavedAnalyses(prevAnalyses => prevAnalyses.filter(analysis => analysis.id !== analysisToDelete));
+      setDeleteDialogOpen(false);
+      setAnalysisToDelete(null);
       
       toast({
         title: "Analysis Deleted",
@@ -142,7 +164,7 @@ const SavedAnalysesPage: React.FC = () => {
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => handleDelete(analysis.id)}
+                              onClick={() => confirmDelete(analysis.id)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="mr-1 h-4 w-4" /> Delete
@@ -163,6 +185,26 @@ const SavedAnalysesPage: React.FC = () => {
           onOpenChange={setDialogOpen}
           analysis={selectedAnalysis}
         />
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your saved analysis.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setAnalysisToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );

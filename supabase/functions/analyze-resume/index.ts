@@ -20,8 +20,8 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Using the correct model name - this is crucial
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Using the correct model name - gemini-1.5-pro-latest is the current model name
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
     const { content } = await req.json();
     if (!content) {

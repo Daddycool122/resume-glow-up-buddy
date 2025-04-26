@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Download, Save, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 interface ResumeAnalysisScore {
   overall: number;
@@ -114,6 +114,9 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, conte
         return;
       }
       
+      // Convert ResumeAnalysisResult to JSON compatible format
+      const analysisJson = JSON.parse(JSON.stringify(result)) as Json;
+      
       // Save the analysis result in the database
       const { error: dbError } = await supabase
         .from('resume_analyses')
@@ -121,7 +124,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, conte
           user_id: user.id,
           filename: filename,
           content: content,
-          analysis: result,
+          analysis: analysisJson,
         });
 
       if (dbError) {

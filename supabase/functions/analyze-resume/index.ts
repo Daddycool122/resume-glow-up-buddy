@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -19,7 +20,7 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Using a supported model name
+    // Using the correct model name - this is crucial
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const { content } = await req.json();
@@ -63,10 +64,16 @@ serve(async (req) => {
     const text = response.text();
     
     // Parse the response text as JSON
-    const analysis = JSON.parse(text);
+    let analysis;
+    try {
+      analysis = JSON.parse(text);
+      console.log('Analysis completed successfully');
+    } catch (jsonError) {
+      console.error('Error parsing JSON response:', jsonError);
+      console.log('Raw text response:', text);
+      throw new Error('Invalid JSON response from Gemini API');
+    }
     
-    console.log('Analysis completed successfully');
-
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

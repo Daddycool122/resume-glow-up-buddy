@@ -8,10 +8,15 @@ import { useNavigate } from 'react-router-dom';
 import { ResumeAnalysisResult } from '@/components/resume/AnalysisResult';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistance } from 'date-fns';
+import { Eye } from 'lucide-react';
+import Navbar from '@/components/layout/Navbar';
+import ViewAnalysisDialog from '@/components/resume/ViewAnalysisDialog';
 
 const SavedAnalysesPage: React.FC = () => {
   const [savedAnalyses, setSavedAnalyses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -55,62 +60,77 @@ const SavedAnalysesPage: React.FC = () => {
   }, []);
 
   const handleViewAnalysis = (analysis: any) => {
-    // You might want to pass the entire analysis object to a detailed view
-    console.log("View analysis:", analysis);
-    // Potential future enhancement: open a modal or navigate to a detailed view
+    setSelectedAnalysis(analysis);
+    setDialogOpen(true);
   };
 
   if (isLoading) {
-    return <div>Loading saved analyses...</div>;
+    return (
+      <>
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
+          <div>Loading saved analyses...</div>
+        </div>
+      </>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Saved Resume Analyses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {savedAnalyses.length === 0 ? (
-            <p className="text-center text-gray-500">No saved analyses found.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Filename</TableHead>
-                  <TableHead>Overall Score</TableHead>
-                  <TableHead>Saved At</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {savedAnalyses.map((analysis) => {
-                  const parsedAnalysis = analysis.analysis as ResumeAnalysisResult;
-                  return (
-                    <TableRow key={analysis.id}>
-                      <TableCell>{analysis.filename}</TableCell>
-                      <TableCell>{parsedAnalysis.scores.overall}/100</TableCell>
-                      <TableCell>
-                        {formatDistance(new Date(analysis.created_at), new Date(), { addSuffix: true })}
-                      </TableCell>
-                      <TableCell>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleViewAnalysis(analysis)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Saved Resume Analyses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {savedAnalyses.length === 0 ? (
+              <p className="text-center text-gray-500">No saved analyses found.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Filename</TableHead>
+                    <TableHead>Overall Score</TableHead>
+                    <TableHead>Saved At</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {savedAnalyses.map((analysis) => {
+                    const parsedAnalysis = analysis.analysis as ResumeAnalysisResult;
+                    return (
+                      <TableRow key={analysis.id}>
+                        <TableCell>{analysis.filename}</TableCell>
+                        <TableCell>{parsedAnalysis.scores.overall}/100</TableCell>
+                        <TableCell>
+                          {formatDistance(new Date(analysis.created_at), new Date(), { addSuffix: true })}
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewAnalysis(analysis)}
+                          >
+                            <Eye className="mr-1 h-4 w-4" /> View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+        
+        <ViewAnalysisDialog 
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          analysis={selectedAnalysis}
+        />
+      </div>
+    </>
   );
 };
 

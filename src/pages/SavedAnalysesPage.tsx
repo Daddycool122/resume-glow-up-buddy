@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { ResumeAnalysisResult } from '@/components/resume/AnalysisResult';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistance } from 'date-fns';
-import { Eye } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import ViewAnalysisDialog from '@/components/resume/ViewAnalysisDialog';
 
@@ -19,6 +18,31 @@ const SavedAnalysesPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('resume_analyses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setSavedAnalyses(prevAnalyses => prevAnalyses.filter(analysis => analysis.id !== id));
+      
+      toast({
+        title: "Analysis Deleted",
+        description: "The analysis has been successfully removed.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting analysis:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the analysis.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchSavedAnalyses = async () => {
@@ -107,13 +131,23 @@ const SavedAnalysesPage: React.FC = () => {
                           {formatDistance(new Date(analysis.created_at), new Date(), { addSuffix: true })}
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleViewAnalysis(analysis)}
-                          >
-                            <Eye className="mr-1 h-4 w-4" /> View
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewAnalysis(analysis)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" /> View
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDelete(analysis.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="mr-1 h-4 w-4" /> Delete
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

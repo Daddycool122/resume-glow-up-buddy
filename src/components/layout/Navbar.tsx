@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileSearch, UserRound, LogOut } from 'lucide-react';
+import { FileSearch, UserRound, LogOut, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -78,8 +78,10 @@ const Navbar = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate('/saved-analyses')}>
+                  <BookOpen className="mr-2 h-4 w-4" /> Saved Analyses
+                </DropdownMenuItem>
                 <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>My Analyses</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />

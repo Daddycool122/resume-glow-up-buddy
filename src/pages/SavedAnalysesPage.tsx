@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ const SavedAnalysesPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,14 +40,26 @@ const SavedAnalysesPage: React.FC = () => {
 
   const handleDelete = async () => {
     if (!analysisToDelete) return;
-
+    
+    setIsDeleting(true);
+    
     try {
-      const { error } = await supabase
+      console.log("Attempting to delete analysis with ID:", analysisToDelete);
+      
+      const { error, data } = await supabase
         .from('resume_analyses')
         .delete()
-        .eq('id', analysisToDelete);
+        .eq('id', analysisToDelete)
+        .select();
 
-      if (error) throw error;
+      console.log("Delete response:", { error, data });
+      
+      if (error) {
+        console.error("Supabase deletion error:", error);
+        throw error;
+      }
+      
+      console.log("Successfully deleted from database");
       
       setSavedAnalyses(prevAnalyses => prevAnalyses.filter(analysis => analysis.id !== analysisToDelete));
       setDeleteDialogOpen(false);
@@ -53,54 +67,58 @@ const SavedAnalysesPage: React.FC = () => {
       
       toast({
         title: "Analysis Deleted",
-        description: "The analysis has been successfully removed.",
+        description: "The analysis has been successfully removed from the database.",
       });
     } catch (error: any) {
       console.error("Error deleting analysis:", error);
       toast({
         title: "Error",
-        description: "Failed to delete the analysis.",
+        description: "Failed to delete the analysis. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const fetchSavedAnalyses = async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to view saved analyses.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
+      console.log("Fetching analyses for user:", user.id);
+      const { data, error } = await supabase
+        .from('resume_analyses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      console.log("Fetched analyses:", data?.length || 0);
+      setSavedAnalyses(data || []);
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Error fetching saved analyses:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load saved analyses.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const fetchSavedAnalyses = async () => {
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-          toast({
-            title: "Authentication required",
-            description: "Please sign in to view saved analyses.",
-            variant: "destructive",
-          });
-          navigate('/auth');
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('resume_analyses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        setSavedAnalyses(data || []);
-        setIsLoading(false);
-      } catch (error: any) {
-        console.error("Error fetching saved analyses:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load saved analyses.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-      }
-    };
-
     fetchSavedAnalyses();
   }, []);
 
@@ -165,6 +183,7 @@ const SavedAnalysesPage: React.FC = () => {
                               variant="outline"
                               onClick={() => confirmDelete(analysis.id)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={isDeleting}
                             >
                               <Trash2 className="mr-1 h-4 w-4" /> Delete
                             </Button>
@@ -190,16 +209,22 @@ const SavedAnalysesPage: React.FC = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your saved analysis.
+                This action cannot be undone. This will permanently delete your saved analysis from the database.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setAnalysisToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel 
+                onClick={() => setAnalysisToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleDelete}
                 className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={isDeleting}
               >
-                Delete
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

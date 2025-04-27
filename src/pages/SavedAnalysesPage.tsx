@@ -8,9 +8,10 @@ import { useNavigate } from 'react-router-dom';
 import { ResumeAnalysisResult } from '@/components/resume/AnalysisResult';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistance } from 'date-fns';
-import { Eye, Trash2 } from 'lucide-react';
+import { Eye, Trash2, ChartBar } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import ViewAnalysisDialog from '@/components/resume/ViewAnalysisDialog';
+import DashboardDialog from '@/components/resume/DashboardDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ const SavedAnalysesPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [dashboardOpen, setDashboardOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -127,6 +129,11 @@ const SavedAnalysesPage: React.FC = () => {
     setDialogOpen(true);
   };
 
+  const handleViewDashboard = (analysis: any) => {
+    setSelectedAnalysis(analysis);
+    setDashboardOpen(true);
+  };
+
   if (isLoading) {
     return (
       <>
@@ -181,6 +188,14 @@ const SavedAnalysesPage: React.FC = () => {
                             <Button 
                               size="sm" 
                               variant="outline"
+                              onClick={() => handleViewDashboard(analysis)}
+                              className="bg-resume-primary/10 hover:bg-resume-primary/20 text-resume-primary"
+                            >
+                              <ChartBar className="mr-1 h-4 w-4" /> Dashboard
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
                               onClick={() => confirmDelete(analysis.id)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               disabled={isDeleting}
@@ -202,6 +217,13 @@ const SavedAnalysesPage: React.FC = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           analysis={selectedAnalysis}
+        />
+
+        <DashboardDialog 
+          open={dashboardOpen}
+          onOpenChange={setDashboardOpen}
+          result={selectedAnalysis?.analysis}
+          filename={selectedAnalysis?.filename}
         />
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

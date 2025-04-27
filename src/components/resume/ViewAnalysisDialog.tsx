@@ -63,12 +63,14 @@ const ViewAnalysisDialog: React.FC<ViewAnalysisDialogProps> = ({
         </DialogContent>
       </Dialog>
 
-      <DashboardDialog 
-        open={dashboardOpen}
-        onOpenChange={setDashboardOpen}
-        result={analysis?.analysis}
-        filename={analysis?.filename}
-      />
+      {analysis && (
+        <DashboardDialog 
+          open={dashboardOpen}
+          onOpenChange={setDashboardOpen}
+          result={analysis.analysis}
+          filename={analysis.filename}
+        />
+      )}
     </>
   );
 };

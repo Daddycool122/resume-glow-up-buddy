@@ -26,11 +26,13 @@ const DashboardDialog: React.FC<DashboardDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[90vw] max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Resume Analytics Dashboard</DialogTitle>
         </DialogHeader>
-        <ResumeDashboard result={result} filename={filename} />
+        <div className="flex-1 overflow-hidden">
+          <ResumeDashboard result={result} filename={filename} />
+        </div>
       </DialogContent>
     </Dialog>
   );

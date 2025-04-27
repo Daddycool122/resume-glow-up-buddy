@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Download, Save, Share2 } from 'lucide-react';
+import { Download, Save, Share2, ChartBar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import DashboardDialog from './DashboardDialog';
 
 interface ResumeAnalysisScore {
   overall: number;
@@ -45,6 +46,7 @@ interface AnalysisResultProps {
 const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, content }) => {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [dashboardOpen, setDashboardOpen] = React.useState(false);
   
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'bg-green-100 text-green-700';
@@ -91,7 +93,6 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, conte
     try {
       setIsSaving(true);
       
-      // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
@@ -114,10 +115,8 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, conte
         return;
       }
       
-      // Convert ResumeAnalysisResult to JSON compatible format
       const analysisJson = JSON.parse(JSON.stringify(result)) as Json;
       
-      // Save the analysis result in the database
       const { error: dbError } = await supabase
         .from('resume_analyses')
         .insert({
@@ -298,15 +297,32 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, filename, conte
         <p className="text-xs text-gray-500">
           Powered by Gemini AI
         </p>
-        <Button 
-          className="bg-resume-primary hover:bg-resume-accent"
-          onClick={handleSaveAnalysis}
-          disabled={isSaving}
-        >
-          <Save className="h-4 w-4 mr-1" />
-          {isSaving ? 'Saving...' : 'Save Analysis'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setDashboardOpen(true)}
+            className="bg-resume-primary/10 hover:bg-resume-primary/20 text-resume-primary"
+          >
+            <ChartBar className="h-4 w-4 mr-1" />
+            Create Dashboard
+          </Button>
+          <Button 
+            className="bg-resume-primary hover:bg-resume-accent"
+            onClick={handleSaveAnalysis}
+            disabled={isSaving}
+          >
+            <Save className="h-4 w-4 mr-1" />
+            {isSaving ? 'Saving...' : 'Save Analysis'}
+          </Button>
+        </div>
       </CardFooter>
+
+      <DashboardDialog 
+        open={dashboardOpen}
+        onOpenChange={setDashboardOpen}
+        result={result}
+        filename={filename}
+      />
     </Card>
   );
 };

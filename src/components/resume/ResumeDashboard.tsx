@@ -86,24 +86,26 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
                 </CardContent>
               </Card>
               
-              {/* Strength vs Weakness */}
+              {/* Strength vs Weakness - Fixed overlapping issue by adjusting layout */}
               <Card id="strength-weakness-card">
                 <CardHeader>
                   <CardTitle>Strengths vs Weaknesses</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <ChartContainer className="h-[300px]" config={{}}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={strengthWeaknessData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="count" fill={COLORS[2]} name="Count" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="h-[300px]">
+                      <ChartContainer className="h-full" config={{}}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={strengthWeaknessData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="count" fill={COLORS[2]} name="Count" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
                     
                     <div className="flex flex-col space-y-4">
                       <div>
@@ -174,36 +176,38 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
             </TabsContent>
             
             <TabsContent value="keywords" className="space-y-6">
-              {/* Keywords Analysis */}
+              {/* Keywords Analysis - Added more spacing between chart and content */}
               <Card>
                 <CardHeader>
                   <CardTitle>Keywords Analysis</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <ChartContainer className="h-[300px]" config={{}}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={keywordData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            nameKey="name"
-                            label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {keywordData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                  <div className="grid md:grid-cols-2 gap-10">
+                    <div className="h-[300px]">
+                      <ChartContainer className="h-full" config={{}}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={keywordData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                              nameKey="name"
+                              label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {keywordData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<ChartTooltipContent />} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
                     
                     <div className="flex flex-col space-y-4">
                       <div>

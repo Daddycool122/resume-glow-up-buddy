@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Eye, Trash2, ChartBar } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import ViewAnalysisDialog from '@/components/resume/ViewAnalysisDialog';
 import DashboardDialog from '@/components/resume/DashboardDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,7 @@ const SavedAnalysesPage: React.FC = () => {
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const confirmDelete = (id: string) => {
     setAnalysisToDelete(id);
@@ -134,6 +135,54 @@ const SavedAnalysesPage: React.FC = () => {
     setDashboardOpen(true);
   };
 
+  const renderMobileAnalysisList = () => {
+    return savedAnalyses.map((analysis) => {
+      const parsedAnalysis = analysis.analysis as ResumeAnalysisResult;
+      return (
+        <Card key={analysis.id} className="mb-4">
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <strong>Filename:</strong> {analysis.filename}
+            </div>
+            <div className="mb-4">
+              <strong>Overall Score:</strong> {parsedAnalysis.scores.overall}/100
+            </div>
+            <div className="mb-4">
+              <strong>Saved:</strong> {formatDistance(new Date(analysis.created_at), new Date(), { addSuffix: true })}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleViewAnalysis(analysis)}
+                className="w-full"
+              >
+                <Eye className="mr-1 h-4 w-4" /> View
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleViewDashboard(analysis)}
+                className="w-full bg-resume-primary/10 hover:bg-resume-primary/20 text-resume-primary"
+              >
+                <ChartBar className="mr-1 h-4 w-4" /> Dashboard
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => confirmDelete(analysis.id)}
+                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                disabled={isDeleting}
+              >
+                <Trash2 className="mr-1 h-4 w-4" /> Delete
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    });
+  };
+
   if (isLoading) {
     return (
       <>
@@ -156,6 +205,8 @@ const SavedAnalysesPage: React.FC = () => {
           <CardContent>
             {savedAnalyses.length === 0 ? (
               <p className="text-center text-gray-500">No saved analyses found.</p>
+            ) : isMobile ? (
+              renderMobileAnalysisList()
             ) : (
               <Table>
                 <TableHeader>
@@ -234,16 +285,17 @@ const SavedAnalysesPage: React.FC = () => {
                 This action cannot be undone. This will permanently delete your saved analysis from the database.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className={isMobile ? "flex-col space-y-2" : undefined}>
               <AlertDialogCancel 
                 onClick={() => setAnalysisToDelete(null)}
                 disabled={isDeleting}
+                className={isMobile ? "w-full m-0" : undefined}
               >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className={`bg-red-600 hover:bg-red-700 text-white ${isMobile ? "w-full m-0" : undefined}`}
                 disabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}

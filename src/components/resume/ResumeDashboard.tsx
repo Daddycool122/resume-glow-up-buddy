@@ -9,6 +9,7 @@ import {
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ResumeDashboardProps {
   result: ResumeAnalysisResult;
@@ -18,6 +19,8 @@ interface ResumeDashboardProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) => {
+  const isMobile = useIsMobile();
+  
   // Format scores data for bar chart
   const scoresData = [
     { name: 'Overall', score: result.scores.overall },
@@ -53,12 +56,12 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
   return (
     <div className="h-full w-full">
       <ScrollArea className="h-[70vh]">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">Resume Dashboard: {filename}</h1>
-          <p className="text-gray-500 mb-6">Visualized insights from your resume analysis</p>
+        <div className="p-4 md:p-6">
+          <h1 className="text-xl md:text-2xl font-bold mb-2 md:mb-4">{isMobile ? 'Dashboard' : `Resume Dashboard: ${filename}`}</h1>
+          <p className="text-gray-500 mb-4 md:mb-6">Visualized insights from your resume analysis</p>
           
           <Tabs defaultValue="overview">
-            <TabsList className="mb-4 sticky top-0 bg-background z-10">
+            <TabsList className="mb-4 sticky top-0 bg-background z-10 w-full overflow-x-auto flex-nowrap">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="keywords">Keywords</TabsTrigger>
@@ -92,8 +95,8 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
                   <CardTitle>Strengths vs Weaknesses</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <div className="h-[300px]">
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                    <div className="h-[250px] md:h-[300px]">
                       <ChartContainer className="h-full" config={{}}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={strengthWeaknessData}>
@@ -137,7 +140,7 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
                   <CardTitle>Resume Section Quality</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer className="h-[400px]" config={{}}>
+                  <ChartContainer className="h-[300px] md:h-[400px]" config={{}}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={sectionScores}>
                         <PolarGrid />
@@ -182,8 +185,8 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
                   <CardTitle>Keywords Analysis</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-10">
-                    <div className="h-[300px]">
+                  <div className="grid md:grid-cols-2 gap-6 md:gap-10">
+                    <div className="h-[250px] md:h-[300px]">
                       <ChartContainer className="h-full" config={{}}>
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
@@ -213,26 +216,26 @@ const ResumeDashboard: React.FC<ResumeDashboardProps> = ({ result, filename }) =
                       <div>
                         <h3 className="font-medium text-blue-700">Matched Keywords</h3>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {result.keywords.matched.slice(0, 8).map((keyword, i) => (
+                          {result.keywords.matched.slice(0, isMobile ? 6 : 8).map((keyword, i) => (
                             <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">
                               {keyword}
                             </span>
                           ))}
-                          {result.keywords.matched.length > 8 && 
-                            <span className="text-sm text-gray-500">+{result.keywords.matched.length - 8} more</span>
+                          {result.keywords.matched.length > (isMobile ? 6 : 8) && 
+                            <span className="text-sm text-gray-500">+{result.keywords.matched.length - (isMobile ? 6 : 8)} more</span>
                           }
                         </div>
                       </div>
                       <div>
                         <h3 className="font-medium text-orange-700">Missing Keywords</h3>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {result.keywords.missing.slice(0, 8).map((keyword, i) => (
+                          {result.keywords.missing.slice(0, isMobile ? 6 : 8).map((keyword, i) => (
                             <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md text-sm">
                               {keyword}
                             </span>
                           ))}
-                          {result.keywords.missing.length > 8 && 
-                            <span className="text-sm text-gray-500">+{result.keywords.missing.length - 8} more</span>
+                          {result.keywords.missing.length > (isMobile ? 6 : 8) && 
+                            <span className="text-sm text-gray-500">+{result.keywords.missing.length - (isMobile ? 6 : 8)} more</span>
                           }
                         </div>
                       </div>

@@ -8,10 +8,12 @@ import { extractTextFromPDF } from '@/services/pdfService';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Settings } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from 'react-router-dom';
 import { generateMockAnalysis } from '@/services/mockService';
+import ApiKeyInput from '@/components/resume/ApiKeyInput';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const AnalyzePage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -19,6 +21,7 @@ const AnalyzePage = () => {
   const [analysisResult, setAnalysisResult] = useState<ResumeAnalysisResult | null>(null);
   const [resumeText, setResumeText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [showApiSettings, setShowApiSettings] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -27,6 +30,11 @@ const AnalyzePage = () => {
     setAnalysisResult(null);
     setResumeText('');
     setError(null);
+  };
+
+  const handleApiKeySubmit = (apiKey: string) => {
+    localStorage.setItem('gemini_api_key', apiKey);
+    setShowApiSettings(false);
   };
 
   const handleAnalyze = async () => {
@@ -104,7 +112,20 @@ const AnalyzePage = () => {
       <main className="flex-grow bg-gray-50 py-12">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-resume-dark mb-6">Analyze Your Resume</h1>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-resume-dark">Analyze Your Resume</h1>
+              <Popover open={showApiSettings} onOpenChange={setShowApiSettings}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9">
+                    <Settings className="h-4 w-4" />
+                    <span className="sr-only">API Settings</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0">
+                  <ApiKeyInput onApiKeySubmit={handleApiKeySubmit} />
+                </PopoverContent>
+              </Popover>
+            </div>
             
             {error && (
               <Alert variant="destructive" className="mb-6">

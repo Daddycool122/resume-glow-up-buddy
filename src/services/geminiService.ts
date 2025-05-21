@@ -13,6 +13,14 @@ class GeminiService {
   constructor({ apiKey }: GeminiServiceProps) {
     this.apiKey = apiKey;
   }
+  
+  /**
+   * Update API key for the service
+   * @param newApiKey The new API key to use
+   */
+  updateApiKey(newApiKey: string): void {
+    this.apiKey = newApiKey;
+  }
 
   async analyzeResume(pdfText: string): Promise<ResumeAnalysisResult> {
     try {

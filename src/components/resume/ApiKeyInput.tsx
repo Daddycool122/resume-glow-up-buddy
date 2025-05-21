@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,26 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface ApiKeyInputProps {
   onApiKeySubmit: (key: string) => void;
+  initialKey?: string;
 }
 
-const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit }) => {
+const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit, initialKey = '' }) => {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if there's a stored key
+    const storedKey = localStorage.getItem('gemini_api_key');
+    if (storedKey) {
+      setApiKey(storedKey);
+      setIsUpdate(true);
+    } else if (initialKey) {
+      setApiKey(initialKey);
+      setIsUpdate(true);
+    }
+  }, [initialKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,18 +45,10 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit }) => {
     onApiKeySubmit(apiKey);
     
     toast({
-      title: "API Key Saved",
-      description: "Your API key has been saved for this session.",
+      title: isUpdate ? "API Key Updated" : "API Key Saved",
+      description: isUpdate ? "Your API key has been updated successfully." : "Your API key has been saved for this session.",
     });
   };
-
-  // Check if there's a stored key
-  React.useEffect(() => {
-    const storedKey = localStorage.getItem('gemini_api_key');
-    if (storedKey) {
-      setApiKey(storedKey);
-    }
-  }, []);
 
   return (
     <div className="p-6 border border-gray-200 rounded-lg bg-white shadow-sm">
@@ -51,7 +57,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit }) => {
           <Key className="h-5 w-5 text-resume-primary" />
         </div>
         <div>
-          <h3 className="font-medium text-resume-dark">Gemini API Key</h3>
+          <h3 className="font-medium text-resume-dark">{isUpdate ? "Update Gemini API Key" : "Gemini API Key"}</h3>
           <p className="text-sm text-gray-500">
             Required for resume analysis
           </p>
@@ -86,7 +92,7 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit }) => {
         </div>
         
         <Button type="submit" className="w-full bg-resume-primary hover:bg-resume-accent">
-          Save API Key
+          {isUpdate ? "Update API Key" : "Save API Key"}
         </Button>
         
         <div className="text-xs text-gray-500 mt-4">

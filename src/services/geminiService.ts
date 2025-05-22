@@ -24,6 +24,11 @@ class GeminiService {
 
   async analyzeResume(pdfText: string): Promise<ResumeAnalysisResult> {
     try {
+      // Verify if API key is available
+      if (!this.apiKey) {
+        throw new Error('Gemini API key is not set. Please configure your API key in settings.');
+      }
+      
       const prompt = `
         You are an expert resume reviewer. Analyze the following resume text extracted from a PDF and provide detailed professional feedback.
         Format your response as a JSON object with the following structure:
@@ -59,6 +64,7 @@ class GeminiService {
         ${pdfText}
       `;
 
+      console.log('Making request to Gemini API');
       const response = await fetch(`${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {

@@ -14,21 +14,31 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    // First try to get the API key from the environment variables
+    let apiKey = Deno.env.get('GEMINI_API_KEY');
+    
+    // Parse the request body
+    const { content, geminiApiKey } = await req.json();
+    
+    // If a specific API key was provided in the request, use that instead
+    if (geminiApiKey) {
+      apiKey = geminiApiKey;
+      console.log("Using API key provided in the request");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    if (!apiKey) {
+      throw new Error('No Gemini API key available. Please provide one in the request or set it as an environment variable.');
+    }
 
-    const { content } = await req.json();
     if (!content) {
       throw new Error('No resume content provided');
     }
 
-    console.log('Analyzing resume content...');
+    console.log('Analyzing resume content with Gemini API');
     
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+
     const prompt = `You are an expert resume reviewer. Analyze the following resume text and provide detailed professional feedback.
     Format your response as a JSON object with the following structure:
     {
@@ -64,7 +74,7 @@ serve(async (req) => {
     const response = await result.response;
     const text = response.text();
     
-    console.log('Raw response received:', text.substring(0, 100) + '...');
+    console.log('Raw response received from Gemini API');
     
     // Extract JSON from response (handle potential markdown code blocks)
     let jsonText = text;

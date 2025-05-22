@@ -35,6 +35,10 @@ const AnalyzePage = () => {
   const handleApiKeySubmit = (apiKey: string) => {
     localStorage.setItem('gemini_api_key', apiKey);
     setShowApiSettings(false);
+    toast({
+      title: "API Key Updated",
+      description: "Your Gemini API key has been saved.",
+    });
   };
 
   const handleAnalyze = async () => {
@@ -68,9 +72,20 @@ const AnalyzePage = () => {
       const text = await extractTextFromPDF(selectedFile);
       setResumeText(text);
       
-      // Call the Edge Function to analyze the resume
+      // Get the API key from localStorage
+      const geminiApiKey = localStorage.getItem('gemini_api_key');
+      
+      if (!geminiApiKey) {
+        setShowApiSettings(true);
+        throw new Error("Gemini API key is required. Please set your API key in settings.");
+      }
+      
+      // Call the Edge Function to analyze the resume, passing the API key
       const { data, error: functionError } = await supabase.functions.invoke('analyze-resume', {
-        body: { content: text }
+        body: { 
+          content: text,
+          geminiApiKey // Pass the API key to the edge function
+        }
       });
 
       if (functionError) throw functionError;

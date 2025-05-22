@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
 
@@ -37,7 +36,7 @@ serve(async (req) => {
     console.log('Analyzing resume content with Gemini API');
     
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" }); // Changed from gemini-1.5-pro-latest
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" }); // Updated to gemini-2.0-flash-lite
 
     const prompt = `You are an expert resume reviewer. Analyze the following resume text and provide detailed professional feedback.
     Format your response as a JSON object with the following structure:

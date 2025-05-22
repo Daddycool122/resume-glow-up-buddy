@@ -8,7 +8,7 @@ interface GeminiServiceProps {
 class GeminiService {
   private apiKey: string;
   private baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-  private model = 'models/gemini-1.5-pro-latest';
+  private model = 'models/gemini-1.0-pro';  // Changed from gemini-1.5-pro-latest
 
   constructor({ apiKey }: GeminiServiceProps) {
     this.apiKey = apiKey;
